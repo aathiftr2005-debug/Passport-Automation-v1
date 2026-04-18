@@ -3,44 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submission Successful</title>
+    <title>Submission Successful | Passport Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .success-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .confetti-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; opacity: 0.6; }
     </style>
 </head>
-<body class="bg-slate-50 flex items-center justify-center min-h-screen p-4">
+<body class="bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center min-h-screen p-4 overflow-hidden">
 
-    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 text-center border border-slate-100">
+    <div class="max-w-md w-full success-card rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] p-10 text-center border border-white relative z-10" 
+         data-aos="zoom-out-up" data-aos-duration="800">
         
-        <div class="mb-6 flex justify-center">
-            <div class="bg-green-100 p-4 rounded-full">
+        <div class="mb-8 flex justify-center">
+            <div class="bg-green-100 p-6 rounded-full shadow-inner animate-bounce" data-aos="scale-in" data-aos-delay="400">
                 <svg class="w-16 h-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
                 </svg>
             </div>
         </div>
 
-        <h1 class="text-3xl font-bold text-slate-800 mb-2">Submitted!</h1>
-        <p class="text-slate-500 mb-8">Unga passport application success-ah register aayiduchi machn.</p>
-
-        <div class="bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl p-6 mb-8">
-            <p class="text-blue-600 text-sm font-semibold uppercase tracking-wider mb-1">Your Application ID</p>
-            <h2 class="text-4xl font-extrabold text-blue-700">#{{ id }}</h2>
-            <p class="text-blue-400 text-xs mt-3">Indha ID-ah note panniko, track panna idhu venum.</p>
+        <div data-aos="fade-up" data-aos-delay="500">
+            <h1 class="text-4xl font-extrabold text-slate-800 mb-3 tracking-tight">Submitted!</h1>
+            <p class="text-slate-500 font-medium leading-relaxed">
+                Unga passport application success-ah register aayiduchi machn.
+            </p>
         </div>
 
-        <div class="space-y-3">
-            <a href="/track" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition duration-300">
-                Track Status Now
+        <div class="mt-10 bg-gradient-to-tr from-blue-600 to-blue-700 rounded-[2rem] p-8 shadow-xl transform transition hover:scale-105 duration-300 relative overflow-hidden" 
+             data-aos="flip-left" data-aos-delay="700">
+            
+            <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
+            
+            <p class="text-blue-100 text-xs font-bold uppercase tracking-[0.2em] mb-2 opacity-80">Your Unique Application ID</p>
+            <h2 class="text-5xl font-black text-white tracking-tighter">#{{ id }}</h2>
+            <p class="text-blue-200 text-[10px] mt-4 font-medium">Indha ID-ah note panniko, track panna idhu venum.</p>
+        </div>
+
+        <div class="mt-10 space-y-4" data-aos="fade-up" data-aos-delay="900">
+            <a href="/track" class="group block w-full bg-slate-900 hover:bg-black text-white font-bold py-5 rounded-2xl shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                Track Status Now 🔍
             </a>
-            <a href="/" class="block w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-3 rounded-xl transition duration-300">
+            
+            <a href="/" class="block w-full bg-white border border-slate-200 text-slate-600 font-bold py-4 rounded-2xl hover:bg-slate-50 transition-all duration-300">
                 Back to Home
             </a>
         </div>
-
     </div>
 
+    <div class="absolute top-10 left-10 w-64 h-64 bg-blue-200 rounded-full filter blur-3xl opacity-20"></div>
+    <div class="absolute bottom-10 right-10 w-64 h-64 bg-green-200 rounded-full filter blur-3xl opacity-20"></div>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            once: true,
+            easing: 'ease-out-back'
+        });
+    </script>
 </body>
 </html>
