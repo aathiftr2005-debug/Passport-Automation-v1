@@ -1,20 +1,32 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_mysqldb import MySQL
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 app = Flask(__name__)
 
-# Security Key for Flash Messages (Project-ku romba mukkiyam)
+# Security Key for Flash Messages
 app.secret_key = 'passport_secret_key_123'
 
-# --- Database Connection Configuration ---
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = '' # Unga XAMPP password inga podunga
-app.config['MYSQL_DB'] = 'passport_db'
+# --- Supabase Database Configuration ---
+# Brackets-ah thookittu unga password-ah ippo replace pannittaen
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.bdcmsuybodbjnciferwq:P6WQW7!YTevy#xk@aws-0-ap-south-1.pooler.supabase.com:5432/postgres'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-mysql = MySQL(app)
+db = SQLAlchemy(app)
 
-# --- HOME PAGE (The Animated Portal) ---
+# --- Database Model (Table Structure) ---
+class Application(db.Model):
+    __tablename__ = 'applications'
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(255), nullable=False)
+    dob = db.Column(db.Date, nullable=False)
+    gender = db.Column(db.String(20))
+    aadhar_no = db.Column(db.String(12), unique=True, nullable=False)
+    address = db.Column(db.Text)
+    status = db.Column(db.String(50), default='Pending')
+    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# --- HOME PAGE ---
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -23,31 +35,26 @@ def index():
 @app.route('/apply', methods=['POST'])
 def apply():
     if request.method == 'POST':
-        full_name = request.form['full_name']
-        dob = request.form['dob']
-        gender = request.form['gender']
-        # Redacting sensitive government ID in logs for security
-        aadhar_no = request.form['aadhar_no'] 
-        address = request.form['address']
-
-        cur = mysql.connection.cursor()
         try:
-            # SQL Query to insert data safely
-            cur.execute("INSERT INTO applications (full_name, dob, gender, aadhar_no, address) VALUES (%s, %s, %s, %s, %s)", 
-                        (full_name, dob, gender, aadhar_no, address))
-            mysql.connection.commit()
-            new_id = cur.lastrowid 
-            cur.close()
+            new_app = Application(
+                full_name = request.form['full_name'],
+                dob = request.form['dob'],
+                gender = request.form['gender'],
+                aadhar_no = request.form['aadhar_no'],
+                address = request.form['address']
+            )
+            db.session.add(new_app)
+            db.session.commit()
             
-            # Application ID-oda success page-ku move aaguvom
-            return redirect(url_for('success_page', app_id=new_id))
+            return redirect(url_for('success_page', app_id=new_app.id))
             
         except Exception as e:
-            # Handle Duplicate Entry (Error 1062)
-            if "1062" in str(e):
+            db.session.rollback()
+            # Handle Duplicate Entry
+            if "unique constraint" in str(e).lower() or "aadhar_no" in str(e).lower():
                 return """
                 <script>
-                    alert('Error: [Aadhaar Redacted] IS ALREADY REGISTERED');
+                    alert('Error: This ID is already registered!');
                     window.location.href = '/';
                 </script>
                 """
@@ -56,47 +63,42 @@ def apply():
 # --- SUCCESS PAGE ---
 @app.route('/success/<int:app_id>')
 def success_page(app_id):
-    # Rendering success.html with the new Application ID
     return render_template('success.html', id=app_id)
 
 # --- ADMIN DASHBOARD ---
 @app.route('/admin')
 def admin_dashboard():
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT id, full_name, dob, gender, status, applied_at FROM applications ORDER BY applied_at DESC")
-    data = cur.fetchall()
-    cur.close()
+    # Fetching all applications using SQLAlchemy
+    data = Application.query.order_by(Application.applied_at.desc()).all()
     return render_template('admin.html', applications=data)
 
 # --- UPDATE STATUS (Admin Only) ---
 @app.route('/update_status/<int:id>/<string:status>')
 def update_status(id, status):
-    cur = mysql.connection.cursor()
-    cur.execute("UPDATE applications SET status=%s WHERE id=%s", (status, id))
-    mysql.connection.commit()
-    cur.close()
+    application = Application.query.get(id)
+    if application:
+        application.status = status
+        db.session.commit()
     return redirect(url_for('admin_dashboard'))
 
-# --- TRACKING LOGIC (Main Dashboard & Search) ---
+# --- TRACKING LOGIC ---
 @app.route('/track', methods=['GET', 'POST'])
 def track_status():
     status_data = None
     if request.method == 'POST':
         user_input = request.form.get('app_id') 
-        cur = mysql.connection.cursor()
-        # Searching via ID or Government ID
-        cur.execute("SELECT full_name, status, applied_at FROM applications WHERE id = %s OR aadhar_no = %s", (user_input, user_input))
-        status_data = cur.fetchone()
-        cur.close()
+        # Search by ID or Aadhaar
+        status_data = Application.query.filter(
+            (Application.id == user_input) | (Application.aadhar_no == user_input)
+        ).first()
     return render_template('track.html', data=status_data)
 
 # --- QUICK TRACK (via URL Prompt) ---
 @app.route('/track/<string:app_id>')
 def track_by_url(app_id):
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT full_name, status, applied_at FROM applications WHERE id = %s OR aadhar_no = %s", (app_id, app_id))
-    status_data = cur.fetchone()
-    cur.close()
+    status_data = Application.query.filter(
+        (Application.id == app_id) | (Application.aadhar_no == app_id)
+    ).first()
     return render_template('track.html', data=status_data)
 
 # --- SERVER START ---
