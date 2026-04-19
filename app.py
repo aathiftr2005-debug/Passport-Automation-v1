@@ -1,38 +1,42 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from urllib.parse import quote  # Connection string-la symbols handling-ku idhu venum
 
 app = Flask(__name__)
 
 # Security Key for Flash Messages
 app.secret_key = 'passport_secret_key_123'
 
-# --- Supabase Database Configuration (Fixed with Port 6543 & SSL) ---
-# Inga Port-ah 6543-ku mathi, sslmode=require sethurukkaen
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.bdcmsuybodbjnciferwq:AathifProject2026@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require'
+# --- Supabase Database Configuration ---
+# Neenga sonna lowercase password-ah inga encode panni podrom
+raw_password = "aathifproject2026"
+safe_password = quote(raw_password)
+
+# Port 6543 (Pooler) use pandrom, idhu thaan Render/Cloud-ku best
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres.bdcmsuybodbjnciferwq:{safe_password}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- Database Model (Table Structure) ---
+# --- Database Model ---
 class Application(db.Model):
     __tablename__ = 'applications'
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(255), nullable=False)
     dob = db.Column(db.Date, nullable=False)
     gender = db.Column(db.String(20))
-    # Redacting sensitive ID for logs/output safety
     aadhar_no = db.Column(db.String(12), unique=True, nullable=False)
     address = db.Column(db.Text)
     status = db.Column(db.String(50), default='Pending')
     applied_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# --- HOME PAGE ---
+# --- ROUTES ---
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# --- APPLICATION SUBMISSION LOGIC ---
 @app.route('/apply', methods=['POST'])
 def apply():
     if request.method == 'POST':
@@ -46,33 +50,22 @@ def apply():
             )
             db.session.add(new_app)
             db.session.commit()
-            
             return redirect(url_for('success_page', app_id=new_app.id))
-            
         except Exception as e:
             db.session.rollback()
-            # Handle Duplicate Entry
-            if "unique constraint" in str(e).lower() or "aadhar_no" in str(e).lower():
-                return """
-                <script>
-                    alert('Error: This ID is already registered!');
-                    window.location.href = '/';
-                </script>
-                """
+            if "unique" in str(e).lower() or "aadhar_no" in str(e).lower():
+                return "<script>alert('Error: This ID is already registered!'); window.location.href='/';</script>"
             return f"Error Occurred: {str(e)}"
 
-# --- SUCCESS PAGE ---
 @app.route('/success/<int:app_id>')
 def success_page(app_id):
     return render_template('success.html', id=app_id)
 
-# --- ADMIN DASHBOARD ---
 @app.route('/admin')
 def admin_dashboard():
     data = Application.query.order_by(Application.applied_at.desc()).all()
     return render_template('admin.html', applications=data)
 
-# --- UPDATE STATUS (Admin Only) ---
 @app.route('/update_status/<int:id>/<string:status>')
 def update_status(id, status):
     application = Application.query.get(id)
@@ -81,7 +74,6 @@ def update_status(id, status):
         db.session.commit()
     return redirect(url_for('admin_dashboard'))
 
-# --- TRACKING LOGIC ---
 @app.route('/track', methods=['GET', 'POST'])
 def track_status():
     status_data = None
@@ -92,7 +84,6 @@ def track_status():
         ).first()
     return render_template('track.html', data=status_data)
 
-# --- QUICK TRACK ---
 @app.route('/track/<string:app_id>')
 def track_by_url(app_id):
     status_data = Application.query.filter(
