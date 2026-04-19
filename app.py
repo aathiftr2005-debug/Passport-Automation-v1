@@ -9,7 +9,8 @@ app.secret_key = 'passport_secret_key_123'
 
 # --- Supabase Database Configuration ---
 # Brackets-ah thookittu unga password-ah ippo replace pannittaen
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.bdcmsuybodbjnciferwq:P6WQW7!YTevy#xk@aws-0-ap-south-1.pooler.supabase.com:5432/postgres'
+# Palaiya line-ah thookittu idhai podunga
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.bdcmsuybodbjnciferwq:AathifProject2026@aws-0-ap-south-1.pooler.supabase.com:5432/postgres'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
