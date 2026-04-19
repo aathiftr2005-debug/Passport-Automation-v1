@@ -14,7 +14,8 @@ raw_password = "aathifproject2026"
 safe_password = quote(raw_password)
 
 # Indha line thaan ippo romba mukkiyam:
-app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres.bdcmsuybodbjnciferwq:{safe_password}@db.bdcmsuybodbjnciferwq.supabase.co:5432/postgres'
+# 'db' ku badhula 'aws-0-ap-south-1' nu maathunga (Ithu IPv4 support pannum)
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres.bdcmsuybodbjnciferwq:{safe_password}@aws-0-ap-south-1.pooler.supabase.com:5432/postgres'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
