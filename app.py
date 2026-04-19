@@ -1,20 +1,20 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from urllib.parse import quote  # Connection string-la symbols handling-ku idhu venum
+from urllib.parse import quote  # Password-la symbols handling-ku
 
 app = Flask(__name__)
 
-# Security Key for Flash Messages
+# Security Key
 app.secret_key = 'passport_secret_key_123'
 
-# --- Supabase Database Configuration ---
-# Neenga sonna lowercase password-ah inga encode panni podrom
+# --- Supabase Database Configuration (DIRECT CONNECTION) ---
+# Neenga anupuna official direct link-ah inga use pandrom
 raw_password = "aathifproject2026"
 safe_password = quote(raw_password)
 
-# Port 6543 (Pooler) use pandrom, idhu thaan Render/Cloud-ku best
-app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres.bdcmsuybodbjnciferwq:{safe_password}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require'
+# Indha line thaan ippo romba mukkiyam:
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres.bdcmsuybodbjnciferwq:{safe_password}@db.bdcmsuybodbjnciferwq.supabase.co:5432/postgres'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
