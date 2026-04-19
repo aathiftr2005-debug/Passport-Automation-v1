@@ -1,18 +1,13 @@
-import os  # Idhu Render port-ah kandupidikka venum
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from urllib.parse import quote
 
 app = Flask(__name__)
 app.secret_key = 'passport_secret_key_123'
 
 # --- Supabase Database Configuration ---
-raw_password = "aathifproject2026"
-safe_password = quote(raw_password)
-
-# Username-la Project ID + Port 6543 + SSL
-app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres.bdcmsuybodbjnciferwq:{safe_password}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://postgres.bdcmsuybodbjnciferwq:aathifproject2026@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -40,7 +35,7 @@ def apply():
         try:
             new_app = Application(
                 full_name = request.form['full_name'],
-                dob = request.form['dob'],
+                dob = datetime.strptime(request.form['dob'], '%Y-%m-%d').date(),
                 gender = request.form['gender'],
                 aadhar_no = request.form['aadhar_no'],
                 address = request.form['address']
@@ -61,8 +56,9 @@ def admin_dashboard():
     data = Application.query.order_by(Application.applied_at.desc()).all()
     return render_template('admin.html', applications=data)
 
-# --- PORT BINDING FIX ---
+# --- DB Init + PORT BINDING ---
 if __name__ == '__main__':
-    # Render-oda port-ah edukkum, illana default 5000-la run aagum
+    with app.app_context():
+        db.create_all()  # Tables illana auto create aagum
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
