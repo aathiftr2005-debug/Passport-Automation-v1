@@ -1,21 +1,23 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from urllib.parse import quote  # Password-la symbols handling-ku
+from urllib.parse import quote
 
 app = Flask(__name__)
-
-# Security Key
 app.secret_key = 'passport_secret_key_123'
 
-# --- Supabase Database Configuration (DIRECT CONNECTION) ---
-# Neenga anupuna official direct link-ah inga use pandrom
+# --- Supabase Database Configuration (PERMANENT FIX) ---
+# 1. Project ID: bdcmsuybodbjnciferwq
+# 2. Password: aathifproject2026
+# 3. Connection: Pooler (IPv4 compatible)
+# 4. Port: 6543 (Mandatory for Session Pooling)
+
 raw_password = "aathifproject2026"
 safe_password = quote(raw_password)
 
-# Indha line thaan ippo romba mukkiyam:
-# 'db' ku badhula 'aws-0-ap-south-1' nu maathunga (Ithu IPv4 support pannum)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.bdcmsuybodbjnciferwq:aathifproject2026@aws-0-ap-south-1.pooler.supabase.com:5432/postgres'
+# Username-la Project ID sethurukkaen (Tenant ID issue-ku idhu thaan fix)
+# Port 6543 potturukkaen (Networking unreachable issue-ku idhu thaan fix)
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres.bdcmsuybodbjnciferwq:{safe_password}@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -54,8 +56,9 @@ def apply():
             return redirect(url_for('success_page', app_id=new_app.id))
         except Exception as e:
             db.session.rollback()
+            # Error-ah theriyaama alert panna logic
             if "unique" in str(e).lower() or "aadhar_no" in str(e).lower():
-                return "<script>alert('Error: This ID is already registered!'); window.location.href='/';</script>"
+                return "<script>alert('Error: This Aadhaar is already registered!'); window.location.href='/';</script>"
             return f"Error Occurred: {str(e)}"
 
 @app.route('/success/<int:app_id>')
@@ -83,13 +86,6 @@ def track_status():
         status_data = Application.query.filter(
             (Application.id == user_input) | (Application.aadhar_no == user_input)
         ).first()
-    return render_template('track.html', data=status_data)
-
-@app.route('/track/<string:app_id>')
-def track_by_url(app_id):
-    status_data = Application.query.filter(
-        (Application.id == app_id) | (Application.aadhar_no == app_id)
-    ).first()
     return render_template('track.html', data=status_data)
 
 if __name__ == '__main__':
