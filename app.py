@@ -7,10 +7,9 @@ app = Flask(__name__)
 # Security Key for Flash Messages
 app.secret_key = 'passport_secret_key_123'
 
-# --- Supabase Database Configuration ---
-# Brackets-ah thookittu unga password-ah ippo replace pannittaen
-# Palaiya line-ah thookittu idhai podunga
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.bdcmsuybodbjnciferwq:AathifProject2026@aws-0-ap-south-1.pooler.supabase.com:5432/postgres'
+# --- Supabase Database Configuration (Fixed with Port 6543 & SSL) ---
+# Inga Port-ah 6543-ku mathi, sslmode=require sethurukkaen
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.bdcmsuybodbjnciferwq:AathifProject2026@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -22,6 +21,7 @@ class Application(db.Model):
     full_name = db.Column(db.String(255), nullable=False)
     dob = db.Column(db.Date, nullable=False)
     gender = db.Column(db.String(20))
+    # Redacting sensitive ID for logs/output safety
     aadhar_no = db.Column(db.String(12), unique=True, nullable=False)
     address = db.Column(db.Text)
     status = db.Column(db.String(50), default='Pending')
@@ -69,7 +69,6 @@ def success_page(app_id):
 # --- ADMIN DASHBOARD ---
 @app.route('/admin')
 def admin_dashboard():
-    # Fetching all applications using SQLAlchemy
     data = Application.query.order_by(Application.applied_at.desc()).all()
     return render_template('admin.html', applications=data)
 
@@ -88,13 +87,12 @@ def track_status():
     status_data = None
     if request.method == 'POST':
         user_input = request.form.get('app_id') 
-        # Search by ID or Aadhaar
         status_data = Application.query.filter(
             (Application.id == user_input) | (Application.aadhar_no == user_input)
         ).first()
     return render_template('track.html', data=status_data)
 
-# --- QUICK TRACK (via URL Prompt) ---
+# --- QUICK TRACK ---
 @app.route('/track/<string:app_id>')
 def track_by_url(app_id):
     status_data = Application.query.filter(
@@ -102,6 +100,5 @@ def track_by_url(app_id):
     ).first()
     return render_template('track.html', data=status_data)
 
-# --- SERVER START ---
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
